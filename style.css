@@ -119,7 +119,12 @@
 @media(max-width:620px){.concept-map,.chapter-grid,.example-pair{grid-template-columns:1fr}}
 @media print{
   header,footer,#toast,.section-head .button-row,[data-page="learn"]{display:none!important}
-  body{background:#fff}.page{display:none!important}#chapter.page.active{display:block!important}
+  /*
+    This used to hide every page and re-show only #chapter, so pressing Ctrl+P
+    anywhere else — the Portfolio a parent wants on paper, most obviously —
+    printed a blank sheet. Print whichever page is open.
+  */
+  body{background:#fff}.page{display:none!important}.page.active{display:block!important}
   #chapter{padding:0!important}.chapter-panel,.chapter-hero>div{break-inside:avoid;box-shadow:none}
 }
 
@@ -843,3 +848,35 @@ body.dark-ui .hero .primary{background:#fff;color:#241f6b}
 body.dark-ui .nokit-switch p,body.dark-ui .launch-item p,body.dark-ui .mission-card p,
 body.dark-ui .celebrate-card p,body.dark-ui .kid-start-grid button small,
 body.dark-ui .review-empty p,body.dark-ui .help-foot,body.dark-ui .weekly-plan p{color:var(--muted)}
+
+/* Navigation is meaningless before a track is chosen, so onboarding hides it. */
+body.pre-onboard .topbar nav,
+body.pre-onboard .learner-chip,
+body.pre-onboard .view-mode-toggle{display:none}
+
+/* Browse by what you feel like making. */
+.interest-chips{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 4px}
+.interest-chips button{border:2px solid var(--line);background:var(--card);color:var(--ink);
+  border-radius:999px;padding:10px 14px;font-weight:800;font-size:calc(14px * var(--tscale));
+  min-height:44px}
+.interest-chips button:hover{border-color:var(--accent)}
+.interest-chips button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+body.dark-ui .interest-chips button.on{color:#14152b}
+@media(max-width:620px){
+  .interest-chips{gap:6px}
+  .interest-chips button{padding:9px 11px;font-size:calc(13px * var(--tscale))}
+}
+
+
+/* Printing any page: drop the interface, keep the content, avoid broken cards. */
+@media print{
+  .topbar,.reading-panel,.learner-panel,.backup-nudge,.net-banner,.storage-banner,
+  .noscript-note,.skip-link,.celebrate,.interest-chips,.library-controls,
+  .explorer-nav,.lesson-actions{display:none!important}
+  .page{padding:0!important;max-width:none!important}
+  .card,.metric,.panel,.lesson-card,.artifact-item,.journal-item,.insight,
+  .path-row,.badge-card,.attempt-packet,.portfolio-test,.summary-sheet section,
+  .skill-evidence-card{break-inside:avoid;box-shadow:none!important}
+  a[href^="http"]:after{content:" (" attr(href) ")";font-size:10px;color:#555}
+  body{color:#000}
+}

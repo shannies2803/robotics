@@ -222,7 +222,7 @@ const DEFAULT_STATE={
   activeLearner:'faye',
   roster:{faye:{name:'Explorer',track:'Explorer',emoji:'🌟'},philip:{name:'Engineer',track:'Engineer',emoji:'⚙️'}},
   equipment:['Web browser'],
-  prefs:{largeText:false,textSize:'normal',fontStyle:'default',motion:'on',theme:'auto',focus:false,equipmentConfirmed:false,viewMode:'learner',betaOnboarded:false,learnerNames:{faye:'',philip:''},noKitPath:{faye:false,philip:false},selfDirected:false,lastBackupAt:null,lastBackupCount:0,backupNudgeDismissedAt:null,betaTesterType:'parent'},
+  prefs:{largeText:false,textSize:'normal',fontStyle:'default',motion:'on',theme:'auto',focus:false,equipmentConfirmed:false,viewMode:'learner',betaOnboarded:false,learnerNames:{faye:'',philip:''},noKitPath:{faye:false,philip:false},selfDirected:false,lastView:null,lastBackupAt:null,lastBackupCount:0,backupNudgeDismissedAt:null,betaTesterType:'parent'},
   learners:{
     faye:{completed:[],missions:{},evidence:{},diagnostics:[],assessments:[],reviews:[],journals:[],artifacts:[],misconceptions:{},remediation:{},startId:null,sessions:[],sessionDraft:null,designReviews:[],vocabViews:{},defects:[],rescueLogs:[],testLogs:[],labAttempts:[],reviewAttempts:[],remediationAttempts:[],attemptPackets:[],debugLogs:[],missionDrafts:{},entryProbes:[],learningSignals:[]},
     philip:{completed:[],missions:{},evidence:{},diagnostics:[],assessments:[],reviews:[],journals:[],artifacts:[],misconceptions:{},remediation:{},startId:null,sessions:[],sessionDraft:null,designReviews:[],vocabViews:{},defects:[],rescueLogs:[],testLogs:[],labAttempts:[],reviewAttempts:[],remediationAttempts:[],attemptPackets:[],debugLogs:[],missionDrafts:{},entryProbes:[],learningSignals:[]}
@@ -323,7 +323,7 @@ function announceStorage(){
 }
 
 let state=loadState();
-let ui={page:'home',currentMissionId:null,library:{q:'',level:'all',tool:'all',quality:'studio'},diag:null,assess:null,currentAttemptHints:new Set(),missionRated:false,explorerStep:0,currentChapter:null,currentLab:null,remediationSkill:null,remediationPassed:null,resumingDraft:false,currentAttemptQuick:null,lab:{gridCommands:[],gridResult:null,sensorResult:null,calibrationResult:null,traceResult:null,traceReveals:0,traceMode:null,gridScenarioId:null,sensorScenarioId:null,calibrationScenarioId:null,traceScenarioId:null}};
+let ui={page:'home',currentMissionId:null,library:{q:'',level:'all',tool:'all',quality:'studio',interest:''},diag:null,assess:null,currentAttemptHints:new Set(),missionRated:false,explorerStep:0,currentChapter:null,currentLab:null,remediationSkill:null,remediationPassed:null,resumingDraft:false,currentAttemptQuick:null,lab:{gridCommands:[],gridResult:null,sensorResult:null,calibrationResult:null,traceResult:null,traceReveals:0,traceMode:null,gridScenarioId:null,sensorScenarioId:null,calibrationScenarioId:null,traceScenarioId:null}};
 
 function clone(v){return JSON.parse(JSON.stringify(v));}
 function safeParse(s,fallback){if(s===null||s===undefined||s==='')return fallback;try{const v=JSON.parse(s);return v===null?fallback:v}catch{return fallback}}
@@ -418,8 +418,35 @@ function mergeState(base,incoming){
   return out;
 }
 
+/*
+  A child who closes the tab mid-mission used to land back on Home and have to
+  find their way in again. The page they were on is remembered; a mission is
+  only reopened if it still has unfinished work saved against it, so coming
+  back never drops them into something they had already finished.
+*/
+const RESTORABLE=new Set(['path','labs','library','learn','review','portfolio','home','skills']);
+function rememberView(){
+  if(!state.prefs.betaOnboarded)return;
+  state.prefs.lastView=(ui.page==='lesson'&&ui.currentMissionId)
+    ? {page:'lesson',missionId:ui.currentMissionId}
+    : {page:RESTORABLE.has(ui.page)?ui.page:'home'};
+  persistStateOnly();
+}
+function restoreLastView(){
+  const v=state.prefs.lastView;
+  if(!v||!v.page)return false;
+  if(v.page==='lesson'){
+    const d=v.missionId&&missionDraft(v.missionId);
+    if(d&&!d.completed&&BY_ID[v.missionId]){ui.resumingDraft=true;openMission(v.missionId);return true;}
+    showPage('path');return true;
+  }
+  if(RESTORABLE.has(v.page)){showPage(v.page);return true;}
+  return false;
+}
 function applyNavigation(){
   const mode=state.prefs.viewMode||'learner',track=profile().track;
+  /* Nothing in the nav works until onboarding picks a track, so hide it until then. */
+  document.body.classList.toggle('pre-onboard',!state.prefs.betaOnboarded);
   document.body.classList.toggle('learner-view',mode!=='adult');document.body.classList.toggle('adult-view',mode==='adult');
   document.querySelectorAll('nav [data-audience]').forEach(el=>{const a=(el.dataset.audience||'').split(/\s+/);el.hidden=!(mode==='adult'?a.includes('adult'):a.includes('learner')||(track==='Engineer'&&a.includes('engineer')));});
   const t=document.getElementById('viewModeToggle');if(t){t.textContent=mode==='adult'?'🧒 Learner view':'👩‍🏫 Grown-up';t.setAttribute('aria-pressed',mode==='adult'?'true':'false');}
@@ -509,6 +536,8 @@ function showPage(id){
   document.querySelectorAll('.page').forEach(x=>x.classList.toggle('active',x.id===id));
   document.querySelectorAll('nav [data-page]').forEach(x=>{const on=x.dataset.page===id;x.classList.toggle('active',on);if(on)x.setAttribute('aria-current','page');else x.removeAttribute('aria-current');});
   renderPage(id);
+  applyNavigation();
+  rememberView();
   window.scrollTo({top:0,behavior:(state.prefs.motion||'on')==='off'?'auto':'smooth'});
   focusPageHeading(id);
 }
@@ -1047,7 +1076,7 @@ function recordLabAttempt(labId,success,summary,skills=[],scenarioId=null,meta={
 }
 function labCardHTML(id){const l=VIRTUAL_LABS[id];if(!l)return'';const n=labScenarioHistory(id).length,v=labVariantStatus(id);return`<article class="lab-card"><div class="lab-card-icon">${l.icon}</div><div><span class="tag">EQUIPMENT-FREE • ${v.solved?`${v.solved}/${v.total} VARIANT${v.total===1?'':'S'} SOLVED`:n?`${n} ATTEMPT${n===1?'':'S'}`:'FREE TO TRY'}</span><h3>${esc(l.title)}</h3><p>${esc(l.tagline)}</p><div class="lab-skills">${l.skills.slice(0,5).map(s=>`<span class="pill">${esc(s)}</span>`).join('')}</div>${v.solved>=2?'<p class="variant-proof">🌉 Changed-context practice: more than one scenario solved.</p>':''}</div><button class="primary" data-action="open-lab" data-lab="${id}">${n?'Open again':'Try lab'} →</button></article>`;}
 function samplerProgress(){const order=['trace','grid','sensor','calibration'],done=order.filter(id=>labAttempts().some(a=>a.labId===id&&a.success)),next=order.find(id=>!done.includes(id))||null;return{order,done,next};}
-function renderLabs(){const p=profile(),id=ui.currentLab;if(!id||!VIRTUAL_LABS[id]){const sampler=samplerProgress();document.getElementById('labsBody').innerHTML=`<div class="section-head"><div><p class="eyebrow">FREE VIRTUAL LABS</p><h1 id="labsTitle">Learn by experimenting — even without a robotics kit</h1><p>These labs teach coding comprehension and engineering reasoning. They add only low-stakes evidence and <b>never</b> pretend to replace a physical Studio mission.</p></div><span class="free-badge">No account • no hardware</span></div><div class="sampler-card"><div><span class="tag">35-MINUTE FREE SAMPLER</span><h2>${sampler.done.length===4?'Sampler complete — now try a real Studio project when hardware is available.':`${sampler.done.length}/4 experiments completed`}</h2><p>Code comprehension → algorithmic planning → sensing/decision → measurement/calibration. This samples both coding and engineering rather than only project setup.</p><div class="sampler-steps">${sampler.order.map((x,i)=>`<span class="${sampler.done.includes(x)?'done':''}">${sampler.done.includes(x)?'✅':i+1} ${VIRTUAL_LABS[x].title}</span>`).join('')}</div></div>${sampler.next?`<button class="primary" data-action="open-lab" data-lab="${sampler.next}">Continue sampler →</button>`:'<button class="primary" data-page="learn">Explore concept chapters →</button>'}</div><div class="lab-promise"><b>${p.emoji} ${p.name} mode:</b> ${p.track==='Explorer'?'one visible goal, immediate feedback, faded examples when useful, and no typing required.':'independent tracing, representation transfer, boundary reasoning and evidence-quality prompts.'}</div><div class="lab-list">${['trace','grid','sensor','calibration'].map(labCardHTML).join('')}</div><div class="info-box"><b>Evidence integrity:</b> Virtual-lab success is low-stakes practice. It cannot by itself make a skill Secure or Transfer; physical projects, cross-context assessment and delayed retrieval still matter.</div>`;return;}if(id==='trace')renderTraceLab();else if(id==='grid')renderGridLab();else if(id==='sensor')renderSensorLab();else if(id==='calibration')renderCalibrationLab();}
+function renderLabs(){const p=profile(),id=ui.currentLab;if(!id||!VIRTUAL_LABS[id]){const sampler=samplerProgress();document.getElementById('labsBody').innerHTML=`<div class="section-head"><div><p class="eyebrow">FREE VIRTUAL LABS</p><h1 id="labsTitle">${(state.prefs.viewMode||'learner')==='adult'?'Learn by experimenting \u2014 even without a robotics kit':'Try things out \u2014 no robot needed'}</h1><p>${(state.prefs.viewMode||'learner')==='adult'?'These labs teach coding comprehension and engineering reasoning. They add only low-stakes evidence and <b>never</b> pretend to replace a physical Studio mission.':'Four little experiments you can do right now, with nothing but this screen. No robot needed. They are good practice \u2014 but building a real thing still counts for more.'}</p></div><span class="free-badge">No account • no hardware</span></div><div class="sampler-card"><div><span class="tag">35-MINUTE FREE SAMPLER</span><h2>${sampler.done.length===4?'Sampler complete — now try a real Studio project when hardware is available.':`${sampler.done.length}/4 experiments completed`}</h2><p>${(state.prefs.viewMode||'learner')==='adult'?'Code comprehension \u2192 algorithmic planning \u2192 sensing/decision \u2192 measurement/calibration. This samples both coding and engineering rather than only project setup.':'Read some code \u2192 plan a route \u2192 make a sensor decide \u2192 measure and fix. Four different kinds of thinking, about half an hour in total.'}</p><div class="sampler-steps">${sampler.order.map((x,i)=>`<span class="${sampler.done.includes(x)?'done':''}">${sampler.done.includes(x)?'✅':i+1} ${VIRTUAL_LABS[x].title}</span>`).join('')}</div></div>${sampler.next?`<button class="primary" data-action="open-lab" data-lab="${sampler.next}">Continue sampler →</button>`:'<button class="primary" data-page="learn">Explore concept chapters →</button>'}</div><div class="lab-promise"><b>${p.emoji} ${p.name} mode:</b> ${(state.prefs.viewMode||'learner')==='adult'?(p.track==='Explorer'?'one visible goal, immediate feedback, faded examples when useful, and no typing required.':'independent tracing, representation transfer, boundary reasoning and evidence-quality prompts.'):(p.track==='Explorer'?'one goal at a time, an answer straight away, and no typing needed.':'you work it out yourself, then explain how you know.')}</div><div class="lab-list">${['trace','grid','sensor','calibration'].map(labCardHTML).join('')}</div>${(state.prefs.viewMode||'learner')==='adult'?'<div class="info-box"><b>Evidence integrity:</b> Virtual-lab success is low-stakes practice. It cannot by itself make a skill Secure or Transfer; physical projects, cross-context assessment and delayed retrieval still matter.</div>':'<div class="info-box"><b>\ud83e\uddea These are practice, not proof.</b> Finishing a lab does not tick off a mission \u2014 you still need to build the real thing and explain how it works.</div>'}`;return;}if(id==='trace')renderTraceLab();else if(id==='grid')renderGridLab();else if(id==='sensor')renderSensorLab();else if(id==='calibration')renderCalibrationLab();}
 function openLab(id,skill=null){ui.currentLab=id;if(id==='trace'&&skill)chooseTraceScenarioForSkill(skill);else chooseLabScenario(id,false);if(id==='grid'){ui.lab.gridCommands=[];ui.lab.gridResult=null;}if(id==='sensor')ui.lab.sensorResult=null;if(id==='calibration')ui.lab.calibrationResult=null;if(id==='trace'){ui.lab.traceResult=null;ui.lab.traceReveals=0;ui.lab.traceMode=traceSupportMode();}showPage('labs');}
 function labHeader(l){const s=labScenario(l.id),v=labVariantStatus(l.id);return `<div class="section-head"><div><p class="eyebrow">EQUIPMENT-FREE VIRTUAL LAB • VARIANT ${Math.min(v.solved+1,v.total||1)}/${v.total||1}</p><h1 id="labsTitle">${l.icon} ${esc(l.title)}</h1><p>${esc(profile().track==='Explorer'?l.explorer:l.engineer)}</p>${s?`<span class="scenario-chip">Current scenario: ${esc(s.label)}</span>`:''}</div><div class="button-row"><button class="secondary" data-action="new-lab-scenario" data-lab="${l.id}">New scenario ↻</button><button class="ghost" data-action="labs-home">← All labs</button></div></div>`;}
 const TRACE_DIAGNOSTIC_CUES={
@@ -1378,7 +1407,7 @@ function renderHome(){
   const latestDiag=l.diagnostics[0],provisional=latestDiag&&latestDiag.confirmed===false;
   document.getElementById('homeBody').innerHTML=`
   <div class="hero"><div><p class="eyebrow">${(state.prefs.viewMode||'learner')==='adult'?'FREE PUBLIC BETA • LEARNING-FIRST':`${p.emoji} ${p.track.toUpperCase()} LEARNER VIEW`}</p><h1 id="homeTitle">Build. Test. Explain. Transfer.</h1><p>${state.activeLearner==='faye'?'Short visual missions: predict, test, diagnose, explain and prove what you learned.':'Engineering briefs with measurement, failure analysis, repeatability and evidence—not beginner busywork.'}</p><div class="button-row"><button class="primary" data-page="path">Start / continue learning →</button><button class="secondary" data-page="labs">Try browser labs</button><button class="ghost" data-page="diagnostic">Placement</button></div></div><div class="hero-art">${p.emoji}<br>${state.activeLearner==='faye'?'🤖✨':'⚙️📊'}</div></div>
-  <div class="metric-grid" style="margin-top:16px"><div class="metric"><span class="tag">STUDIO PATH</span><strong>${completed}/${activeIds.length}</strong><small>curated missions evidenced</small></div><div class="metric"><span class="tag">ASSESSMENTS</span><strong>${assessed}</strong><small>saved concept checks</small></div><div class="metric"><span class="tag">REVIEW</span><strong>${reviews}</strong><small>spaced checks due</small></div></div>
+  <div class="metric-grid" style="margin-top:16px"><div class="metric"><span class="tag">STUDIO PATH</span><strong>${completed}/${activeIds.length}</strong><small>${(state.prefs.viewMode||'learner')==='adult'?'curated missions evidenced':'missions finished'}</small></div><div class="metric"><span class="tag">ASSESSMENTS</span><strong>${assessed}</strong><small>${(state.prefs.viewMode||'learner')==='adult'?'saved concept checks':'quizzes done'}</small></div><div class="metric"><span class="tag">REVIEW</span><strong>${reviews}</strong><small>${(state.prefs.viewMode||'learner')==='adult'?'spaced checks due':'things to remember'}</small></div></div>
   ${equipmentIntroHTML()}
   ${resumeDraftCardHTML()}
   ${provisional?`<div class="provisional"><b>🧭 Placement is provisional.</b><p>The first recommended mission will confirm the level. If it requires substantial help, InventorLab automatically steps the starting point back rather than assuming the quiz was right.</p></div>`:''}
@@ -1417,11 +1446,35 @@ function missionCoverHTML(m){
   const h=missionHue(m),done=missionDone(m.id);
   return `<div class="mission-cover" style="--h:${h}" aria-hidden="true"><span class="cover-emoji">${m.icon||'\ud83e\uddea'}</span>${m.quality==='studio'?'<span class="cover-star">\u2605</span>':''}${done?'<span class="cover-done">\u2713</span>':''}</div>`;
 }
+/*
+  A child does not browse 251 missions by tool name. They browse by what they
+  feel like making. Each interest maps to concepts and tools the bank already
+  has, so this is a view over existing data rather than new metadata.
+*/
+const INTERESTS=[
+  {id:'games',   icon:'\ud83c\udfae', label:'Make a game',        test:m=>/game|score|chase|maze|dice|random|enem|player/i.test(m.title+' '+m.concept+' '+m.goal)},
+  {id:'moving',  icon:'\ud83e\udd16', label:'Make something move', test:m=>/dash|wedo|spike|motor|gear|robot|move|drive|wheel|mechan/i.test(m.title+' '+m.tool+' '+m.concept)},
+  {id:'sensing', icon:'\ud83d\udca1', label:'Lights and sensors',  test:m=>/sensor|light|sound|detect|threshold|input|output|circuit|led|button/i.test(m.title+' '+m.concept+' '+m.goal)},
+  {id:'apps',    icon:'\ud83d\udcf1', label:'Apps and websites',   test:m=>/app inventor|html|css|javascript|web|interface|\bui\b|screen/i.test(m.title+' '+m.tool+' '+m.concept)},
+  {id:'unplug',  icon:'\u270f\ufe0f', label:'No computer needed',  test:m=>/no hardware/i.test(m.tool)},
+  {id:'making',  icon:'\ud83d\udd27', label:'Design and build',    test:m=>/3d printing|cad|tolerance|fabricat|design|print/i.test(m.title+' '+m.tool+' '+m.concept)}
+];
+function interestChipsHTML(active){
+  return `<div class="interest-chips" role="group" aria-label="What do you feel like making?">`
+    +`<button class="${active?'':'on'}" data-action="library-interest" data-interest="">\ud83c\udf1f Everything</button>`
+    +INTERESTS.map(x=>`<button class="${active===x.id?'on':''}" data-action="library-interest" data-interest="${x.id}">${x.icon} ${esc(x.label)}</button>`).join('')
+    +`</div>`;
+}
+function matchesInterest(m,id){
+  if(!id)return true;
+  const x=INTERESTS.find(i=>i.id===id);
+  return x?x.test(m):true;
+}
 function renderLibrary(){
   const tools=[...new Set(LESSONS.map(m=>m.tool))].sort(); const f=ui.library;
-  const list=LESSONS.filter(m=>(f.quality==='all'||m.quality===f.quality)&&(f.level==='all'||m.level===f.level)&&(f.tool==='all'||m.tool===f.tool)&&(!f.ready||gearAvailable(m))&&(!f.q||[m.title,m.tool,m.concept,m.goal].join(' ').toLowerCase().includes(f.q.toLowerCase())));
+  const list=LESSONS.filter(m=>(f.quality==='all'||m.quality===f.quality)&&(f.level==='all'||m.level===f.level)&&(f.tool==='all'||m.tool===f.tool)&&(!f.ready||gearAvailable(m))&&matchesInterest(m,f.interest)&&(!f.q||[m.title,m.tool,m.concept,m.goal].join(' ').toLowerCase().includes(f.q.toLowerCase())));
   const startable=LESSONS.filter(gearAvailable).length;
-  document.getElementById('libraryBody').innerHTML=`<div class="section-head"><div><p class="eyebrow">MISSION LIBRARY</p><h1 id="libraryTitle">${(state.prefs.viewMode||'learner')==='adult'?'Browse with quality labels':'Find something to build'}</h1></div><span class="pill">${list.length} shown</span></div>${(state.prefs.viewMode||'learner')==='adult'?'<div class="info-box"><b>Recommendation engine uses Studio missions first.</b> Extended practice is kept for breadth and choice, but it is not treated as equivalent evidence of curriculum depth.</div>':`<div class="info-box"><b>\u2b50 Studio missions are the fully written ones</b> \u2014 pictures, worked examples and a stuck-button that actually helps. Practice missions give you a real challenge to hit but less help around it, so save them for extra reps. ${startable} mission${startable===1?'':'s'} can be started with what you have right now.</div>`}<div class="library-controls" style="margin-top:14px"><input id="librarySearch" aria-label="Search missions" placeholder="Search title, tool or concept" value="${esc(f.q)}"><select id="qualityFilter" aria-label="Quality filter"><option value="studio" ${f.quality==='studio'?'selected':''}>Studio quality</option><option value="extended" ${f.quality==='extended'?'selected':''}>Extended practice</option><option value="all" ${f.quality==='all'?'selected':''}>All</option></select><select id="levelFilter" aria-label="Level filter"><option value="all">All levels</option><option value="explorer" ${f.level==='explorer'?'selected':''}>Explorer</option><option value="engineer" ${f.level==='engineer'?'selected':''}>Engineer</option></select><label class="ready-toggle"><input type="checkbox" id="readyFilter" ${f.ready?'checked':''}> Only what I can start now</label><select id="toolFilter" aria-label="Tool filter"><option value="all">All tools</option>${tools.map(t=>`<option ${f.tool===t?'selected':''} value="${esc(t)}">${esc(t)}</option>`).join('')}</select></div><div class="mission-list">${list.map(m=>`<article class="mission-card">${missionCoverHTML(m)}<div><span class="quality-badge ${m.quality}">${m.quality==='studio'?'★ Studio':'Practice • generated challenge'}</span><h3>${esc(m.title)}</h3><p>${esc(m.goal)}</p><div class="mission-meta"><span class="pill">${esc(m.tool)}</span><span class="pill blue">${esc(m.concept)}</span><span class="pill">${m.mins} min</span>${missionDone(m.id)?'<span class="pill good">evidenced</span>':''}</div></div><button class="ghost" data-action="start-mission" data-id="${m.id}">${missionDone(m.id)?'Review':'Open'}</button></article>`).join('')||'<div class="empty">No missions match those filters.</div>'}</div>`;
+  document.getElementById('libraryBody').innerHTML=`<div class="section-head"><div><p class="eyebrow">MISSION LIBRARY</p><h1 id="libraryTitle">${(state.prefs.viewMode||'learner')==='adult'?'Browse with quality labels':'Find something to build'}</h1></div><span class="pill">${list.length} shown</span></div>${(state.prefs.viewMode||'learner')==='adult'?'<div class="info-box"><b>Recommendation engine uses Studio missions first.</b> Extended practice is kept for breadth and choice, but it is not treated as equivalent evidence of curriculum depth.</div>':`<div class="info-box"><b>\u2b50 Studio missions are the fully written ones</b> \u2014 pictures, worked examples and a stuck-button that actually helps. Practice missions give you a real challenge to hit but less help around it, so save them for extra reps. ${startable} mission${startable===1?'':'s'} can be started with what you have right now.</div>`}${interestChipsHTML(f.interest)}<div class="library-controls" style="margin-top:14px"><input id="librarySearch" aria-label="Search missions" placeholder="Search title, tool or concept" value="${esc(f.q)}"><select id="qualityFilter" aria-label="Quality filter"><option value="studio" ${f.quality==='studio'?'selected':''}>${(state.prefs.viewMode||'learner')==='adult'?'Studio quality':'\u2b50 Fully written'}</option><option value="extended" ${f.quality==='extended'?'selected':''}>${(state.prefs.viewMode||'learner')==='adult'?'Extended practice':'Extra practice'}</option><option value="all" ${f.quality==='all'?'selected':''}>All</option></select><select id="levelFilter" aria-label="Level filter"><option value="all">All levels</option><option value="explorer" ${f.level==='explorer'?'selected':''}>Explorer</option><option value="engineer" ${f.level==='engineer'?'selected':''}>Engineer</option></select><label class="ready-toggle"><input type="checkbox" id="readyFilter" ${f.ready?'checked':''}> Only what I can start now</label><select id="toolFilter" aria-label="Tool filter"><option value="all">All tools</option>${tools.map(t=>`<option ${f.tool===t?'selected':''} value="${esc(t)}">${esc(t)}</option>`).join('')}</select></div><div class="mission-list">${list.map(m=>`<article class="mission-card">${missionCoverHTML(m)}<div><span class="quality-badge ${m.quality}">${m.quality==='studio'?'★ Studio':'Practice • generated challenge'}</span><h3>${esc(m.title)}</h3><p>${esc(m.goal)}</p><div class="mission-meta"><span class="pill">${esc(m.tool)}</span><span class="pill blue">${esc(m.concept)}</span><span class="pill">${m.mins} min</span>${missionDone(m.id)?'<span class="pill good">evidenced</span>':''}</div></div><button class="ghost" data-action="start-mission" data-id="${m.id}">${missionDone(m.id)?'Review':'Open'}</button></article>`).join('')||'<div class="empty">No missions match those filters.</div>'}</div>`;
 }
 
 const STRAND_BY_SKILL={'Prediction':'Computational Foundations','Sequencing':'Computational Foundations','Pattern recognition':'Computational Foundations','Loops':'Computational Foundations','Algorithms':'Algorithms & Decomposition','Decomposition':'Algorithms & Decomposition','Optimisation':'Algorithms & Decomposition','Measurement':'Measurement & Debugging','Calibration':'Measurement & Debugging','Debugging':'Measurement & Debugging','Testing':'Measurement & Debugging','Iteration':'Measurement & Debugging','Data':'Measurement & Data','Sensors':'Sensing & Control','Conditionals':'Sensing & Control','Input / output':'Sensing & Control','Variables':'Interactive Software','State':'Interactive Software','Events':'Interactive Software','Functions':'Software Engineering','Transfer':'Systems Integration'};
@@ -2326,7 +2379,7 @@ function importState(file){
 }
 function resetState(){if(!confirm('Reset all InventorLab Public Beta progress stored in this browser? This cannot be undone unless you exported a backup.'))return;state=clone(DEFAULT_STATE);save();ui={...ui,currentMissionId:null,diag:null,assess:null};showPage('home');toast('Local progress reset.');}
 
-function libraryChanged(){const q=document.getElementById('librarySearch'),quality=document.getElementById('qualityFilter'),level=document.getElementById('levelFilter'),tool=document.getElementById('toolFilter');ui.library={q:q?.value||'',quality:quality?.value||'studio',level:level?.value||'all',tool:tool?.value||'all',ready:!!document.getElementById('readyFilter')?.checked};renderLibrary();const s=document.getElementById('librarySearch');if(s){s.focus();s.setSelectionRange(s.value.length,s.value.length);}}
+function libraryChanged(){const q=document.getElementById('librarySearch'),quality=document.getElementById('qualityFilter'),level=document.getElementById('levelFilter'),tool=document.getElementById('toolFilter');ui.library={q:q?.value||'',quality:quality?.value||'studio',level:level?.value||'all',tool:tool?.value||'all',ready:!!document.getElementById('readyFilter')?.checked,interest:ui.library.interest||''};renderLibrary();const s=document.getElementById('librarySearch');if(s){s.focus();s.setSelectionRange(s.value.length,s.value.length);}}
 
 function handleClick(e){
   if(e.target.classList&&e.target.classList.contains('celebrate')){closeCelebrate();return;}
@@ -2406,6 +2459,7 @@ function handleClick(e){
   else if(a==='save-journal')saveJournal();
   else if(a==='prefill-journal')prefillJournal();
   else if(a==='toggle-large'){state.prefs.textSize=(state.prefs.textSize||'normal')==='normal'?'large':'normal';save();renderSettings();}
+  else if(a==='library-interest'){ui.library.interest=b.dataset.interest||'';renderLibrary();}
   else if(a==='open-reading')toggleReadingPanel();
   else if(a==='text-size'){state.prefs.textSize=b.dataset.size;save();refreshPrefsUI();}
   else if(a==='font-style'){state.prefs.fontStyle=b.dataset.font;save();refreshPrefsUI();}
@@ -2435,4 +2489,4 @@ document.addEventListener('keydown',e=>{const lp=document.getElementById('learne
 applyPrefs();watchSystemTheme();updateLearnerChip();announceStorage();registerServiceWorker();announceNetwork();maybeShowBackupNudge();
 window.addEventListener('online',announceNetwork);window.addEventListener('offline',announceNetwork);
 if(!state.prefs.betaOnboarded){ui.page='welcome';showPage('welcome');}
-else renderHome();
+else if(!restoreLastView())renderHome();
