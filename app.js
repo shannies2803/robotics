@@ -222,7 +222,7 @@ const DEFAULT_STATE={
   activeLearner:'faye',
   roster:{faye:{name:'Explorer',track:'Explorer',emoji:'🌟'},philip:{name:'Engineer',track:'Engineer',emoji:'⚙️'}},
   equipment:['Web browser'],
-  prefs:{largeText:false,textSize:'normal',fontStyle:'default',motion:'on',theme:'auto',focus:false,equipmentConfirmed:false,viewMode:'learner',betaOnboarded:false,learnerNames:{faye:'',philip:''},noKitPath:{faye:false,philip:false},selfDirected:false,lastView:null,lastBackupAt:null,lastBackupCount:0,backupNudgeDismissedAt:null,betaTesterType:'parent'},
+  prefs:{largeText:false,textSize:'normal',fontStyle:'default',motion:'on',theme:'auto',focus:false,equipmentConfirmed:false,viewMode:'learner',betaOnboarded:false,learnerNames:{faye:'',philip:''},noKitPath:{faye:false,philip:false},selfDirected:false,lastView:null,installDismissed:false,lastBackupAt:null,lastBackupCount:0,backupNudgeDismissedAt:null,betaTesterType:'parent'},
   learners:{
     faye:{completed:[],missions:{},evidence:{},diagnostics:[],assessments:[],reviews:[],journals:[],artifacts:[],misconceptions:{},remediation:{},startId:null,sessions:[],sessionDraft:null,designReviews:[],vocabViews:{},defects:[],rescueLogs:[],testLogs:[],labAttempts:[],reviewAttempts:[],remediationAttempts:[],attemptPackets:[],debugLogs:[],missionDrafts:{},entryProbes:[],learningSignals:[]},
     philip:{completed:[],missions:{},evidence:{},diagnostics:[],assessments:[],reviews:[],journals:[],artifacts:[],misconceptions:{},remediation:{},startId:null,sessions:[],sessionDraft:null,designReviews:[],vocabViews:{},defects:[],rescueLogs:[],testLogs:[],labAttempts:[],reviewAttempts:[],remediationAttempts:[],attemptPackets:[],debugLogs:[],missionDrafts:{},entryProbes:[],learningSignals:[]}
@@ -252,9 +252,45 @@ const STORE=(function(){
   Offline support. Registered late and defensively: a failure here must never stop the app,
   and on file:// there is no service-worker scope at all.
 */
+/*
+  The site is installable and works offline, but nothing ever said so, so in
+  practice nobody installed it. The browser's own prompt is captured and offered
+  once there is something worth keeping \u2014 after onboarding \u2014 and never again
+  once dismissed.
+*/
+let deferredInstall=null;
+function watchInstallPrompt(){
+  window.addEventListener('beforeinstallprompt',e=>{
+    e.preventDefault();deferredInstall=e;maybeShowInstall();
+  });
+  window.addEventListener('appinstalled',()=>{
+    deferredInstall=null;state.prefs.installDismissed=true;save();
+    const el=document.getElementById('installBar');if(el)el.hidden=true;
+  });
+}
+function maybeShowInstall(){
+  const el=document.getElementById('installBar');if(!el)return;
+  if(!deferredInstall||!state.prefs.betaOnboarded||state.prefs.installDismissed){el.hidden=true;return;}
+  el.hidden=false;
+  el.innerHTML='<div><b>\ud83d\udcf2 Keep InventorLab on this device?</b><p>It opens like an app and every mission still works with no internet.</p></div>'
+    +'<div class="button-row"><button class="primary" data-action="do-install">Add it</button><button class="ghost" data-action="dismiss-install">No thanks</button></div>';
+}
+async function doInstall(){
+  if(!deferredInstall)return;
+  deferredInstall.prompt();
+  try{ await deferredInstall.userChoice; }catch(e){}
+  deferredInstall=null;
+  const el=document.getElementById('installBar');if(el)el.hidden=true;
+}
+function dismissInstall(){
+  state.prefs.installDismissed=true;save();
+  const el=document.getElementById('installBar');if(el)el.hidden=true;
+}
 function registerServiceWorker(){
   if(!('serviceWorker'in navigator)||location.protocol==='file:')return;
   navigator.serviceWorker.register('sw.js').then(reg=>{
+    /* A tablet left open for days would otherwise never notice a new version. */
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden){try{reg.update();}catch(e){}}});
     reg.addEventListener('updatefound',()=>{
       const incoming=reg.installing;if(!incoming)return;
       incoming.addEventListener('statechange',()=>{
@@ -554,7 +590,24 @@ function focusPageHeading(id){
   const live=document.getElementById('routeStatus');
   if(live)live.textContent=h.textContent.replace(/\s+/g,' ').trim();
 }
+/*
+  Any thrown error inside a render used to leave the child looking at a blank
+  white panel with no way out. The work is all stored locally, so recovery is
+  genuinely possible: say so plainly, offer a way back, and keep the technical
+  detail folded away for an adult.
+*/
 function renderPage(id){
+  try{ renderPageInner(id); }
+  catch(err){
+    const host=document.getElementById(id+'Body');
+    console.error('InventorLab render error on page "'+id+'":',err);
+    if(host)host.innerHTML=`<div class="render-error"><h2>\ud83d\ude45 This screen did not load properly</h2>
+      <p>Nothing you have done is lost \u2014 your work is saved on this device. Try going back to your path, or reload the page.</p>
+      <div class="button-row"><button class="primary" data-page="path">Back to My Path</button><button class="secondary" data-action="reload-page">Reload</button></div>
+      <details><summary>Details for a grown-up</summary><pre>${esc(String(err&&err.stack||err))}</pre></details></div>`;
+  }
+}
+function renderPageInner(id){
   if(id==='home')renderHome(); else if(id==='path')renderPath(); else if(id==='session')renderSession(); else if(id==='learn')renderLearnHub(); else if(id==='chapter')renderConceptChapter(ui.currentChapter); else if(id==='labs')renderLabs(); else if(id==='library')renderLibrary(); else if(id==='lesson')renderLesson();
   else if(id==='skills')renderSkills(); else if(id==='assessment')renderAssessment(); else if(id==='review')renderReview();
   else if(id==='portfolio')renderPortfolio(); else if(id==='parent')renderParent(); else if(id==='diagnostic')renderDiagnostic();
@@ -816,7 +869,7 @@ const GLOSSARY={
 function glossaryHTML(m){
   const terms=[primarySkill(m),...missionSkills(m)].filter((x,i,a)=>GLOSSARY[x]&&a.indexOf(x)===i).slice(0,4);
   if(!terms.length)return'';
-  return `<div class="glossary-card"><h3>🗣 Need a word?</h3><p class="muted">Tap a word. You do not need to memorise definitions before doing the mission.</p><div class="glossary-chips">${terms.map(s=>`<button class="vocab-chip" data-action="vocab" data-skill="${esc(s)}">${esc(GLOSSARY[s][0])}</button>`).join('')}</div>${terms.map(s=>`<div class="vocab-def" id="vocab-${esc(s).replace(/[^a-zA-Z0-9]/g,'_')}"><b>${esc(GLOSSARY[s][0])}</b> — ${esc(GLOSSARY[s][1])}<br><small>${esc(GLOSSARY[s][2])}</small></div>`).join('')}</div>`;
+  return `<details class="glossary-card"><summary><b>🗣 Need a word?</b> <small class="muted">${terms.length} word${terms.length===1?'':'s'} from this mission</small></summary><p class="muted">Tap a word. You do not need to memorise definitions before doing the mission.</p><div class="glossary-chips">${terms.map(s=>`<button class="vocab-chip" data-action="vocab" data-skill="${esc(s)}">${esc(GLOSSARY[s][0])}</button>`).join('')}</div>${terms.map(s=>`<div class="vocab-def" id="vocab-${esc(s).replace(/[^a-zA-Z0-9]/g,'_')}"><b>${esc(GLOSSARY[s][0])}</b> — ${esc(GLOSSARY[s][1])}<br><small>${esc(GLOSSARY[s][2])}</small></div>`).join('')}</details>`;
 }
 function toggleVocab(skill){
   const id='vocab-'+skill.replace(/[^a-zA-Z0-9]/g,'_'),el=document.getElementById(id);if(el)el.classList.toggle('open');
@@ -2469,7 +2522,10 @@ function handleClick(e){
   else if(a==='learner-self-start')startAsLearner(b.dataset.track);
   else if(a==='close-celebrate')closeCelebrate();
   else if(a==='apply-update')applyUpdate();
+  else if(a==='reload-page')location.reload();
   else if(a==='dismiss-backup-nudge')dismissBackupNudge();
+  else if(a==='do-install')doInstall();
+  else if(a==='dismiss-install')dismissInstall();
   else if(a==='open-summary'){showPage('summary');}
   else if(a==='print-summary'){showPage('summary');setTimeout(()=>window.print(),200);}
   else if(a==='toggle-focus'){state.prefs.focus=!state.prefs.focus;save();renderSettings();}
@@ -2486,7 +2542,7 @@ document.addEventListener('input',handleInput);
 window.addEventListener?.('beforeunload',()=>{if(ui.page==='lesson')captureMissionDraft(true);});
 document.addEventListener('keydown',e=>{const lp=document.getElementById('learnerPanel');if(e.key==='Escape'&&lp&&!lp.hidden){toggleLearnerPanel(false);return;}const rp=document.getElementById('readingPanel');if(e.key==='Escape'&&rp&&!rp.hidden){toggleReadingPanel(false);return;}if(e.key==='Escape'&&document.querySelector('.celebrate')){closeCelebrate();return;}if(e.key==='Escape'&&state.prefs.focus){state.prefs.focus=false;save();toast('Focus mode off.');}if(e.altKey&&e.key.toLowerCase()==='h')showPage('home');if(e.altKey&&e.key.toLowerCase()==='p')showPage('path');if(e.altKey&&e.key.toLowerCase()==='r')showPage('review');});
 
-applyPrefs();watchSystemTheme();updateLearnerChip();announceStorage();registerServiceWorker();announceNetwork();maybeShowBackupNudge();
+applyPrefs();watchSystemTheme();updateLearnerChip();announceStorage();registerServiceWorker();watchInstallPrompt();announceNetwork();maybeShowBackupNudge();
 window.addEventListener('online',announceNetwork);window.addEventListener('offline',announceNetwork);
 if(!state.prefs.betaOnboarded){ui.page='welcome';showPage('welcome');}
 else if(!restoreLastView())renderHome();

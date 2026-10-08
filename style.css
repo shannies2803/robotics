@@ -880,3 +880,23 @@ body.dark-ui .interest-chips button.on{color:#14152b}
   a[href^="http"]:after{content:" (" attr(href) ")";font-size:10px;color:#555}
   body{color:#000}
 }
+
+/* Offer to install, once, after onboarding. */
+.install-bar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+  background:#eef0ff;border-bottom:2px solid #c9c4f7;padding:13px 18px;color:#2f2a6b}
+.install-bar p{margin:3px 0 0;font-size:calc(13.5px * var(--tscale));max-width:62ch}
+.install-bar button{min-height:40px}
+body.dark-ui .install-bar{background:#1d1b3a;border-bottom-color:#3b3570;color:var(--ink)}
+
+/* A render that throws should still leave a way out. */
+.render-error{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:22px;margin:18px 0}
+.render-error h2{margin-top:0}
+.render-error p{max-width:62ch;color:var(--muted)}
+.render-error pre{white-space:pre-wrap;word-break:break-word;font-size:12px;background:#f4f6f9;
+  padding:10px;border-radius:9px;overflow:auto;max-height:260px}
+body.dark-ui .render-error pre{background:#131927}
+.render-error details{margin-top:12px}
+.render-error summary{cursor:pointer;font-weight:800;color:var(--muted)}
+.glossary-card>summary{cursor:pointer;font-weight:900;list-style:none}
+.glossary-card>summary::-webkit-details-marker{display:none}
+.glossary-card[open]>summary{margin-bottom:8px}
