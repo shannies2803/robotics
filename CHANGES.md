@@ -4,6 +4,28 @@ No build step, no dependencies, no third-party requests. Drop the folder on Netl
 
 ---
 
+## Live-site audit (8 Oct 2026)
+
+Netlify is connected and the site is live at https://inventorlab.netlify.app.
+Confirmed indirectly: the host answers, and what it answers with is this repo's
+`robots.txt`. A non-existent Netlify subdomain returns 404 instead.
+
+The audit found one real gap, and it was in the testing rather than the site.
+Every suite here is served by a plain static server with no headers, so the
+Content-Security-Policy in `_headers` had never been exercised even once. A CSP
+that blocks something the app needs fails only in production, and only for the
+people already using the site.
+
+`tools/prod.js` now parses `_headers` the way Netlify does, serves under those
+rules, and drives the app in Chrome while recording CSP violations, failed
+requests, console errors, service-worker registration and the manifest. It
+passes — no inline scripts or handlers anywhere, the worker registers under the
+CSP, and every icon loads — but that is now a verified fact rather than an
+assumption. It runs in CI.
+
+Also checked: the outbound links a child depends on (Scratch, MakeCode,
+Tinkercad, the Raspberry Pi editor) still resolve.
+
 ## Round 7 (RC8 → RC9) — on GitHub, and twenty improvements
 
 The site now lives at github.com/shannies2803/robotics, with the test suites in

@@ -42,6 +42,10 @@ jobs:
         working-directory: tools
         run: node audit.js
 
+      - name: Works under the production headers and CSP
+        working-directory: tools
+        run: node prod.js
+
       # The service worker serves the app offline. If the site changes but the
       # cache name does not, everyone who already has it installed keeps the
       # old version — the one deploy mistake this project is most likely to make.

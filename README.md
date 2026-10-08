@@ -4,7 +4,12 @@ A site where primary-school children learn robotics, coding and engineering by
 building things, testing them and explaining what happened — rather than
 clicking through lessons. No account, no sign-in, no data leaves the device.
 
-**Live at https://inventorlab.netlify.app** *(update this once Netlify is connected)*
+**Live at https://inventorlab.netlify.app**
+
+The site is deliberately not indexed by search engines: `robots.txt` says
+`Disallow: /` and the page carries a `noindex` meta tag. People you give the
+link to can open it normally; it just will not turn up in a search. Remove both
+when you want it findable.
 
 It works with a robot kit, and it works just as well without one. A child with
 nothing but a browser has a complete path of their own: Scratch, paper, and
@@ -103,6 +108,7 @@ node sweep.js          # every page renders, in every configuration (jsdom, no b
 node layout.js         # no sideways scrolling, 4 widths × 3 text sizes (real Chrome)
 node verify.js         # lesson-step containment, mission rendering, tap targets (real Chrome)
 node audit.js          # contrast in both themes, labels, offline assets, language (real Chrome)
+node prod.js           # the site under the real Netlify headers and CSP (real Chrome)
 node shot.js           # screenshots into tools/shots/ (real Chrome)
 ```
 
@@ -114,6 +120,13 @@ leaves installed copies on the old version.
 The browser suites look for Chrome in the usual places; set `CHROME_PATH` if it
 lives somewhere else. They skip cleanly rather than failing when Chrome is
 absent, so `sweep.js` alone still works anywhere Node runs.
+
+`prod.js` is the one that catches production-only faults. Every other suite is
+served by a plain static server with no headers, so the Content-Security-Policy
+in `_headers` is never exercised — a CSP that blocks something the app needs
+would fail only on the live site, and only for people already using it. This
+parses `_headers` the way Netlify does, serves under those rules, and records
+CSP violations, failed requests, service-worker registration and the manifest.
 
 **Why two harnesses.** `sweep.js` uses jsdom and is fast, but it cannot see
 layout. Two of the worst bugs this site has had — a stray `</div>` that leaked
