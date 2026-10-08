@@ -43,9 +43,14 @@ const SHOTS = [
   const browser = await puppeteer.launch({ executablePath: exe, headless: 'new', args: CHROME_ARGS });
   const errs = [];
 
+  /*
+    One page, reused. Opening a fresh tab per shot exhausts the browser's
+    resources part-way through a full run on a small machine.
+  */
+  const page = await browser.newPage();
+  page.on('pageerror', e => errs.push(e.message));
+
   for (const job of jobs) {
-    const page = await browser.newPage();
-    page.on('pageerror', e => errs.push(job.name + ': ' + e.message));
     await page.setViewport({ width: job.w, height: job.h, isMobile: !!job.mobile, hasTouch: !!job.mobile });
     await page.goto(url, { waitUntil: 'networkidle0' });
     if (job.setup) await page.evaluate(job.setup);
@@ -53,8 +58,8 @@ const SHOTS = [
     await new Promise(r => setTimeout(r, 350));
     await page.screenshot({ path: path.join(OUT, job.name + '.png'), fullPage: !!job.full });
     console.log('  wrote shots/' + job.name + '.png');
-    await page.close();
   }
+  await page.close();
 
   await browser.close();
   server.close();
