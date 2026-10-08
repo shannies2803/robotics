@@ -900,3 +900,43 @@ body.dark-ui .render-error pre{background:#131927}
 .glossary-card>summary{cursor:pointer;font-weight:900;list-style:none}
 .glossary-card>summary::-webkit-details-marker{display:none}
 .glossary-card[open]>summary{margin-bottom:8px}
+
+/* Components the first dark pass missed, found by the contrast audit once it
+   stopped being fooled by translucent backgrounds over gradients. */
+body.dark-ui .learning-plan{background:var(--card);border-color:var(--line);color:var(--ink)}
+body.dark-ui .learning-plan h2,body.dark-ui .learning-plan p{color:var(--ink)}
+body.dark-ui .plan-reason{background:#1c2334;color:var(--ink)}
+body.dark-ui .plan-kicker{color:var(--accent2)}
+body.dark-ui .badge{background:#262040;color:var(--accent2)}
+body.dark-ui .path-row{background:var(--card);color:var(--ink)}
+body.dark-ui .path-row.done{background:#16301f;border-color:#2a5a3c}
+body.dark-ui .path-row.current{background:#1d1b3a;border-color:var(--accent)}
+body.dark-ui .path-objective,body.dark-ui .mission-objective-mini{background:#1c2334;color:var(--ink)}
+body.dark-ui .strand-card,body.dark-ui .strand-head,body.dark-ui .memory-health,
+body.dark-ui .lab-promise,body.dark-ui .ready-toggle,body.dark-ui .sampler-card,
+body.dark-ui .equipment-intro,body.dark-ui .today-card,body.dark-ui .resume-card,
+body.dark-ui .attempt-continuity,body.dark-ui .free-banner,body.dark-ui .commercial-note,
+body.dark-ui .action-plan,body.dark-ui .signal-row,body.dark-ui .evidence-gate,
+body.dark-ui .criteria-evidence,body.dark-ui .transfer-box,body.dark-ui .professional-stretch,
+body.dark-ui .engineering-lens,body.dark-ui .troubleshooter,body.dark-ui .concept-column,
+body.dark-ui .chapter-panel,body.dark-ui .knowledge-grid>*,body.dark-ui .weekly-plan article{
+  background:var(--card);border-color:var(--line);color:var(--ink)}
+body.dark-ui .pill{background:#232b3d;color:var(--muted)}
+body.dark-ui .pill.good{background:var(--goodbg);color:var(--good)}
+body.dark-ui .pill.warn{background:var(--warnbg);color:var(--warn)}
+body.dark-ui .pill.bad{background:var(--badbg);color:var(--bad)}
+body.dark-ui .pill.blue{background:var(--bluebg);color:var(--blue)}
+body.dark-ui .quality-badge.extended{background:#232b3d;color:var(--muted)}
+body.dark-ui .quality-badge.studio{background:var(--goodbg);color:var(--good)}
+body.dark-ui .sampler-steps span{background:var(--card);border-color:var(--line);color:var(--ink)}
+body.dark-ui .sampler-steps span.done{background:var(--goodbg);border-color:#2a5a3c;color:var(--good)}
+body.dark-ui .path-row b,body.dark-ui .path-row div{color:var(--ink)}
+body.dark-ui .path-row small{color:var(--muted)}
+/* The learner-view path rules use an id selector, so the dark overrides have
+   to match that specificity or they silently lose. */
+body.dark-ui.learner-view #pathBody .path-row{background:var(--card);border-color:var(--line)}
+body.dark-ui.learner-view #pathBody .path-row.done{background:#16301f;border-color:#2a5a3c}
+body.dark-ui.learner-view #pathBody .path-row.current{background:#1d1b3a;border-color:var(--accent)}
+body.dark-ui.learner-view #pathBody .path-icon{background:#232b3d;border-color:var(--line)}
+body.dark-ui.learner-view #pathBody .path-row.done .path-icon{background:#16301f;border-color:#2a5a3c}
+body.dark-ui.learner-view #pathBody .path-row.current .path-icon{background:#262040;border-color:var(--accent)}

@@ -1,0 +1,65 @@
+# Runs the suites in tools/ on every push and pull request.
+#
+# The browser suites need Chrome. GitHub's ubuntu runners ship with one
+# preinstalled at /usr/bin/google-chrome, which lib.js finds on its own.
+name: Checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install test dependencies
+        working-directory: tools
+        run: npm install --no-audit --no-fund
+
+      - name: Every page renders
+        working-directory: tools
+        run: node sweep.js
+
+      - name: No sideways scrolling
+        working-directory: tools
+        run: node layout.js
+
+      - name: Structure, containment and tap targets
+        working-directory: tools
+        run: node verify.js
+
+      - name: Contrast, labels and learner-facing language
+        working-directory: tools
+        run: node audit.js
+
+      # The service worker serves the app offline. If the site changes but the
+      # cache name does not, everyone who already has it installed keeps the
+      # old version — the one deploy mistake this project is most likely to make.
+      - name: Service worker cache was bumped
+        if: github.event_name == 'push'
+        run: |
+          CHANGED=$(git diff --name-only HEAD^ HEAD -- '*.js' '*.css' '*.html' '*.webmanifest' \
+            | grep -v '^tools/' || true)
+          if [ -z "$CHANGED" ]; then
+            echo "No site files changed; no cache bump needed."
+            exit 0
+          fi
+          echo "Site files changed:"; echo "$CHANGED"
+          if git diff HEAD^ HEAD -- sw.js | grep -q '^\+const CACHE'; then
+            echo "sw.js CACHE was bumped."
+          else
+            echo "::error::Site files changed but the CACHE name in sw.js was not bumped."
+            echo "Installed copies will keep serving the old version. Edit the CACHE"
+            echo "constant at the top of sw.js (e.g. inventorlab-rc8-1 to inventorlab-rc9-1)."
+            exit 1
+          fi

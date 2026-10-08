@@ -1,8 +1,60 @@
-# InventorLab Academy — Public Beta RC8
+# InventorLab Academy — Public Beta RC9
 
 No build step, no dependencies, no third-party requests. Drop the folder on Netlify.
 
 ---
+
+## Round 7 (RC8 → RC9) — on GitHub, and twenty improvements
+
+The site now lives at github.com/shannies2803/robotics, with the test suites in
+`tools/` and CI running them on every push.
+
+**Dark mode.** Follows the device by default, with Light/Dark overrides beside the
+other reading settings. Only the design tokens change; the stylesheet predates
+theming and hardcodes white in about a hundred places, so the surfaces that must
+flip are redirected to the tokens rather than rewritten.
+
+**Contrast was measured, not eyeballed** — and the first pass was wrong. An audit
+that skipped translucent backgrounds over gradients (which report a computed
+colour that is not what is painted) found 82 further failures: the "best next
+move" card, path rows, pills, the sampler, the lab promise. One of them failed
+only because the learner-view rules use an id selector, so the dark override
+silently lost on specificity. Both themes now pass at 3:1 throughout.
+
+**Printing was broken everywhere except two pages.** The print stylesheet hid
+every page and re-showed only `#chapter`, so a parent pressing Ctrl+P on the
+Portfolio got a blank sheet. Any open page now prints, without the interface.
+
+**An error boundary.** A thrown render left a child looking at a blank white
+panel. Renders are wrapped: the screen says nothing is lost, offers a way back,
+and folds the stack trace away for an adult. Verified by forcing a throw.
+
+**Learner-facing language.** Labs, the library filters, Home, My Path, Review and
+the Portfolio were written in the project's internal register — "low-stakes
+evidence", "cross-context retrieval", "curated missions evidenced" — on pages a
+child reads alone. Grown-up view keeps the precise wording. `audit.js` now fails
+if that vocabulary reappears in learner view.
+
+**Browse by interest.** Six chips over the existing 251 missions: make a game,
+make something move, lights and sensors, apps and websites, no computer needed,
+design and build. Every one returns a non-empty set.
+
+**Smaller things that matter.** The site offers to install itself (it was always
+installable and offline-capable; nothing ever said so). It remembers the page you
+were on across a reload, reopening a mission only if unfinished work is saved
+against it. It checks for a new version when the tab regains focus, not only on
+load. `prefers-reduced-motion` is now respected automatically. Navigation is
+hidden during onboarding, where none of it works. The mission word list folds
+away, taking the first lesson screen from 2,844px to 2,662px.
+
+**Two latent bugs.** A `.library-controls input` rule was stretching a checkbox to
+116px. And a stray `}`, left when the zoom-based text scaling was replaced, sat in
+the stylesheet where CSS error recovery hid it.
+
+**`tools/audit.js`** makes this round's checks permanent: offline-asset
+completeness, contrast in both themes, stretched controls, labels, duplicate ids,
+and learner-facing language. CI also fails the build if site files change without
+a `CACHE` bump in `sw.js`.
 
 ## Round 6 (RC7 → RC8) — the first round anyone actually looked at it
 

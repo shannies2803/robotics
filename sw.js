@@ -10,7 +10,7 @@
 
   Bump CACHE on every release. Old caches are deleted on activate.
 */
-const CACHE = 'inventorlab-rc8-1';
+const CACHE = 'inventorlab-rc9-1';
 const SHELL = [
   './', './index.html', './style.css',
   './toolkit.js', './data.js', './deep_content.js', './concept_chapters.js',

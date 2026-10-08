@@ -46,8 +46,9 @@ that a child can run it without an adult sitting next to them:
 | Parent or teacher | Grown-up view → Session, Parent, Summary, Settings |
 | Printing for a parent evening | **Summary** → *Print or save as PDF* |
 
-The **Aa** button in the top bar holds text size, an easier-to-read letter style
-and a calm mode that stops all motion. It is in the top bar rather than in
+The **Aa** button in the top bar holds text size, an easier-to-read letter style,
+a calm mode that stops all motion, and light/dark colours (following the device
+by default). It is in the top bar rather than in
 Settings on purpose: Settings is adult-only, so a child who set the site up
 alone could not otherwise reach it.
 
@@ -57,9 +58,10 @@ Netlify is connected to this repository. Every push to `main` publishes
 automatically. `netlify.toml` holds the settings — no build command, publish the
 repository root.
 
-**One thing to remember on every deploy:** bump `CACHE` at the top of `sw.js`
-(currently `inventorlab-rc8-1`). The service worker serves the app offline, and
-forgetting this is the one reliable way to ship an update that nobody receives.
+**On every deploy, bump `CACHE` at the top of `sw.js`** (currently
+`inventorlab-rc9-1`). The service worker serves the app offline, so without a
+bump everyone who already has the site installed keeps the old version. CI now
+fails the build if you forget.
 
 ## Editing
 
@@ -100,10 +102,14 @@ npm install            # jsdom; puppeteer-core is optional but needed for the br
 node sweep.js          # every page renders, in every configuration (jsdom, no browser)
 node layout.js         # no sideways scrolling, 4 widths × 3 text sizes (real Chrome)
 node verify.js         # lesson-step containment, mission rendering, tap targets (real Chrome)
+node audit.js          # contrast in both themes, labels, offline assets, language (real Chrome)
 node shot.js           # screenshots into tools/shots/ (real Chrome)
 ```
 
-Every suite should finish with `0 failed`.
+Every suite should finish with `0 failed`. They also run in GitHub Actions on
+every push, along with a guard that fails the build if site files changed but
+the `CACHE` name in `sw.js` did not — the one deploy mistake that silently
+leaves installed copies on the old version.
 
 The browser suites look for Chrome in the usual places; set `CHROME_PATH` if it
 lives somewhere else. They skip cleanly rather than failing when Chrome is
