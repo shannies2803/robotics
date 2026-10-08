@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#5b52d6">
+<meta name="robots" content="noindex,nofollow">
+<meta name="description" content="InventorLab Academy — a free, account-free site where primary-school learners build, test and explain robotics and coding projects, with or without a kit.">
+<title>InventorLab Academy — Free Public Beta</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png" type="image/png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="InventorLab">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="skip-link" href="#mainContent">Skip to main content</a>
+<noscript><div class="noscript-note"><b>JavaScript is switched off.</b> InventorLab runs entirely in your browser, so nothing on this page can load without it. Turn JavaScript on for this site and reload.</div></noscript>
+<div id="storageBanner" class="storage-banner" role="status" hidden></div>
+<div id="netBanner" class="net-banner" role="status" hidden></div>
+<div id="backupNudge" class="backup-nudge" role="status" hidden></div>
+<header class="topbar">
+  <button class="brand" data-page="home" aria-label="InventorLab home">🚀 <span>InventorLab</span><small>Academy</small></button>
+  <nav aria-label="Main navigation">
+    <button data-page="home" data-audience="learner engineer adult">Home</button>
+    <button data-page="path" data-audience="learner engineer adult">My Path</button>
+    <button data-page="session" data-audience="adult">Session</button>
+    <button data-page="learn" data-audience="learner engineer adult">Learn</button>
+    <button data-page="labs" data-audience="learner engineer adult">Labs</button>
+    <button data-page="library" data-audience="learner engineer adult">Missions</button>
+    <button data-page="skills" data-audience="engineer adult">Skills</button>
+    <button data-page="review" data-audience="learner engineer adult">Review</button>
+    <button data-page="portfolio" data-audience="learner engineer adult">Portfolio</button>
+    <button data-page="parent" data-audience="adult">Parent</button>
+    <button data-page="summary" data-audience="adult">Summary</button>
+    <button data-page="settings" data-audience="adult">Settings</button>
+    <button data-page="feedback" data-audience="adult learner engineer">Feedback</button>
+  </nav>
+  <button class="reading-btn" id="readingBtn" data-action="open-reading" aria-expanded="false" aria-controls="readingPanel" title="Reading comfort: text size and letter style">Aa</button>
+  <button class="view-mode-toggle" id="viewModeToggle" data-action="toggle-view">👩‍🏫 Grown-up</button>
+  <button class="learner-chip" id="learnerChip" data-action="switch-learner" aria-expanded="false" aria-controls="learnerPanel">🌟 Explorer</button>
+</header>
+
+<main id="mainContent">
+<section id="welcome" class="page" aria-labelledby="welcomeTitle"><div id="welcomeBody"></div></section>
+<section id="home" class="page active" aria-labelledby="homeTitle">
+  <div id="homeBody"></div>
+</section>
+<section id="path" class="page" aria-labelledby="pathTitle">
+  <div id="pathBody"></div>
+</section>
+<section id="session" class="page" aria-labelledby="sessionTitle">
+  <div id="sessionBody"></div>
+</section>
+<section id="alpha" class="page" aria-labelledby="alphaTitle">
+  <div id="alphaBody"></div>
+</section>
+<section id="learn" class="page" aria-labelledby="learnTitle">
+  <div id="learnBody"></div>
+</section>
+<section id="chapter" class="page" aria-labelledby="chapterTitle"><div id="chapterBody"></div></section>
+<section id="labs" class="page" aria-labelledby="labsTitle"><div id="labsBody"></div></section>
+<section id="library" class="page" aria-labelledby="libraryTitle">
+  <div id="libraryBody"></div>
+</section>
+<section id="lesson" class="page" aria-labelledby="lessonTitle">
+  <div id="lessonBody"></div>
+</section>
+<section id="skills" class="page" aria-labelledby="skillsTitle">
+  <div id="skillsBody"></div>
+</section>
+<section id="assessment" class="page" aria-labelledby="assessmentTitle">
+  <div id="assessmentBody"></div>
+</section>
+<section id="review" class="page" aria-labelledby="reviewTitle">
+  <div id="reviewBody"></div>
+</section>
+<section id="portfolio" class="page" aria-labelledby="portfolioTitle">
+  <div id="portfolioBody"></div>
+</section>
+<section id="parent" class="page" aria-labelledby="parentTitle">
+  <div id="parentBody"></div>
+</section>
+<section id="diagnostic" class="page" aria-labelledby="diagnosticTitle">
+  <div id="diagnosticBody"></div>
+</section>
+<section id="coach" class="page" aria-labelledby="coachTitle">
+  <div id="coachBody"></div>
+</section>
+<section id="summary" class="page" aria-labelledby="summaryTitle">
+  <div id="summaryBody"></div>
+</section>
+<section id="settings" class="page" aria-labelledby="settingsTitle">
+  <div id="settingsBody"></div>
+</section>
+<section id="feedback" class="page" aria-labelledby="feedbackTitle">
+  <div id="feedbackBody"></div>
+</section>
+</main>
+<div id="readingPanel" class="reading-panel" role="dialog" aria-label="Reading comfort" hidden></div>
+<div id="learnerPanel" class="reading-panel learner-panel" role="dialog" aria-label="Choose a learner" hidden></div>
+<div id="routeStatus" class="sr-only" role="status" aria-live="polite"></div>
+<div id="toast" role="status" aria-live="polite"></div>
+<footer>
+  <span>InventorLab Academy • Free Public Beta</span>
+  <span>No account • progress stays on this device • beta feedback welcome</span>
+</footer>
+<script src="toolkit.js"></script>
+<script src="data.js"></script>
+<script src="deep_content.js"></script>
+<script src="concept_chapters.js"></script>
+<script src="assessment_bank.js"></script>
+<script src="virtual_labs.js"></script>
+<script src="retrieval_prompts.js"></script>
+<script src="studio_blueprints.js"></script>
+<script src="nokit_missions.js"></script>
+<script src="nokit_microbit.js"></script>
+<script src="nokit_engineer.js"></script>
+<script src="challenge_briefs.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+# Netlify build settings for this site.
+#
+# The site is plain HTML, CSS and JavaScript with no build step and no
+# dependencies, so Netlify just publishes the repository root as it is.
+[build]
+  publish = "."
+  command = ""
+
+# Security headers live in `_headers` rather than here, because that file
+# carries the Content-Security-Policy the site is actually tested against.
+# Keeping them in one place avoids two sources of truth for the same policy.
+
+# The service worker must never be served from cache, or a browser can keep
+# handing out an old worker that in turn keeps serving an old app.
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# index.html is the entry point to everything else; the service worker
+# handles offline use, so there is no reason to let a CDN pin an old copy.
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"

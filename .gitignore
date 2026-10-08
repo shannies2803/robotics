@@ -1,0 +1,7 @@
+node_modules/
+package-lock.json
+.DS_Store
+
+# Screenshots written by tools/shot.js. The app's own icons (icon-*.png,
+# apple-touch-icon.png) are NOT ignored — the installable web app needs them.
+tools/shots/

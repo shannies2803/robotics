@@ -1,0 +1,18 @@
+{
+  "name": "inventorlab-tools",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Test suites and audits for InventorLab Academy. Not part of the site.",
+  "scripts": {
+    "sweep": "node sweep.js",
+    "layout": "node layout.js",
+    "verify": "node verify.js",
+    "shots": "node shot.js"
+  },
+  "dependencies": {
+    "jsdom": "^24.0.0"
+  },
+  "optionalDependencies": {
+    "puppeteer-core": "^22.0.0"
+  }
+}
