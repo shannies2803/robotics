@@ -321,7 +321,6 @@ body.learner-view .topbar nav button{font-size:calc(14px * var(--tscale))}
 body.text-large{--tscale:1.15}
 body.text-xlarge{--tscale:1.32}
 
-}
 body.readable-font,body.readable-font button,body.readable-font input,
 body.readable-font textarea,body.readable-font select{
   font-family:"Atkinson Hyperlegible",Verdana,Tahoma,"Trebuchet MS",sans-serif;
@@ -702,3 +701,145 @@ h3[tabindex="-1"]:focus-visible,strong[tabindex="-1"]:focus-visible{
 .autosave-line{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap;margin:0 0 10px;
   font-size:calc(13px * var(--tscale));color:var(--muted)}
 .autosave-line b{color:#475467;font-weight:800}
+
+/* ============================================================
+   1. The search/filter rule was styling checkboxes too.
+   `.library-controls input` matched the "only what I can start now"
+   checkbox and stretched it to 116px with an 11px pad.
+   ============================================================ */
+.library-controls input[type="checkbox"],.library-controls input[type="radio"]{
+  width:auto;min-width:0;padding:0;border-radius:4px;accent-color:var(--accent);
+  inline-size:20px;block-size:20px;flex:0 0 auto}
+.ready-toggle{justify-content:flex-start}
+
+/* ============================================================
+   2. Dark mode. Children use tablets in the evening, and a white
+   page at bedtime is genuinely unpleasant. Follows the device
+   setting by default; the Settings toggle can force either way.
+   Only the tokens change — every component already uses them.
+   ============================================================ */
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ink:#e8ecf5; --muted:#9aa6bd; --line:#2b3345; --paper:#10141f; --card:#171d2b;
+    --accent:#9a91ff; --accent2:#b0a8ff;
+    --good:#6fd79b; --goodbg:#16301f; --warn:#f0c66a; --warnbg:#332a12;
+    --bad:#ef9a9a; --badbg:#36201f; --blue:#7cc6ef; --bluebg:#132733;
+    --shadow:0 10px 30px rgba(0,0,0,.45);
+  }
+}
+:root[data-theme="dark"]{
+  --ink:#e8ecf5; --muted:#9aa6bd; --line:#2b3345; --paper:#10141f; --card:#171d2b;
+  --accent:#9a91ff; --accent2:#b0a8ff;
+  --good:#6fd79b; --goodbg:#16301f; --warn:#f0c66a; --warnbg:#332a12;
+  --bad:#ef9a9a; --badbg:#36201f; --blue:#7cc6ef; --bluebg:#132733;
+  --shadow:0 10px 30px rgba(0,0,0,.45);
+}
+
+/*
+  The stylesheet predates theming and hardcodes white in ~100 places. Rather
+  than rewrite every rule, the surfaces that must flip are redirected to the
+  tokens. Anything still literally white is intentional (text on the gradient
+  hero, confetti).
+*/
+body.dark-ui{
+  background:var(--paper); color:var(--ink);
+}
+body.dark-ui .card,body.dark-ui .metric,body.dark-ui .panel,body.dark-ui .mission-card,
+body.dark-ui .path-row,body.dark-ui .lesson-card,body.dark-ui .coach-card,body.dark-ui .review-card,
+body.dark-ui .artifact-item,body.dark-ui .journal-item,body.dark-ui .insight,
+body.dark-ui .knowledge-card,body.dark-ui .platform-card,body.dark-ui .lab-card,
+body.dark-ui .skill-evidence-card,body.dark-ui .roster-row,body.dark-ui .launch-item,
+body.dark-ui .one-job,body.dark-ui .badge-strip,body.dark-ui .badge-card,
+body.dark-ui .summary-sheet,body.dark-ui .empty,body.dark-ui .virtual-lab-shell,
+body.dark-ui .reading-panel,body.dark-ui .session-observation,body.dark-ui .design-review,
+body.dark-ui .engineer-testlog,body.dark-ui .deep-dive,body.dark-ui .worked-peek,
+body.dark-ui .pref-row,body.dark-ui .gear-guide-card,body.dark-ui .system-node,
+body.dark-ui .story-card,body.dark-ui .handoff-card,body.dark-ui .celebrate-card{
+  background:var(--card);border-color:var(--line);color:var(--ink)}
+body.dark-ui .topbar{background:rgba(23,29,43,.96);border-bottom-color:var(--line)}
+body.dark-ui .reading-btn,body.dark-ui .learner-chip,body.dark-ui .view-mode-toggle{
+  background:var(--card);border-color:var(--line);color:var(--ink)}
+body.dark-ui .topbar nav button{color:var(--muted)}
+body.dark-ui .topbar nav button:hover,body.dark-ui .topbar nav button.active{
+  background:#232b3d;color:var(--accent2)}
+body.dark-ui .ghost{background:#232b3d;color:var(--ink)}
+body.dark-ui .secondary{background:#262040;color:var(--accent2)}
+body.dark-ui .seg{background:#232b3d}
+body.dark-ui .seg button{color:var(--muted)}
+body.dark-ui .seg button.on{background:var(--accent);color:#0f1220}
+body.dark-ui .library-controls input,body.dark-ui .library-controls select,
+body.dark-ui .big-input,body.dark-ui textarea,body.dark-ui input[type=text],
+body.dark-ui input[type=number],body.dark-ui select,body.dark-ui .roster-name,
+body.dark-ui .roster-add input,body.dark-ui .roster-add select{
+  background:#131927;border-color:var(--line);color:var(--ink)}
+body.dark-ui .quick-check button,body.dark-ui .assessment-choice,body.dark-ui .rubric button,
+body.dark-ui .confidence-row button,body.dark-ui .kid-start-grid button,
+body.dark-ui .learner-pick button{background:var(--card);border-color:var(--line);color:var(--ink)}
+body.dark-ui .skill-group,body.dark-ui .lab-instruction,body.dark-ui .deep-panel,
+body.dark-ui .system-map,body.dark-ui .badge-next,body.dark-ui .summary-note,
+body.dark-ui .roster-add,body.dark-ui .command-queue,body.dark-ui .evidence-strength div,
+body.dark-ui .provenance-grid span,body.dark-ui .summary-grid>div,body.dark-ui .observed-grid>div,
+body.dark-ui .cal-metrics>div{background:#1c2334;color:var(--ink)}
+body.dark-ui .hint{background:#1c2334}
+body.dark-ui .model,body.dark-ui .knowledge-card .model{background:#0b0f18}
+body.dark-ui .mission-cover{filter:saturate(.72) brightness(.72)}
+body.dark-ui .storyboard-title,body.dark-ui .path-row small,body.dark-ui .muted{color:var(--muted)}
+body.dark-ui footer{color:var(--muted)}
+body.dark-ui .skip-link:focus{background:var(--card);color:var(--ink)}
+/* Boxes whose meaning is carried by colour keep it, just darker. */
+body.dark-ui .info-box{background:var(--bluebg);border-color:#2b4a5e}
+body.dark-ui .warning-box,body.dark-ui .lesson-card.stop{background:var(--warnbg);border-color:#5a4a1e}
+body.dark-ui .lesson-card.success{background:var(--goodbg);border-color:#2a5a3c}
+body.dark-ui .nokit-switch{background:var(--card);border-color:#2a5a3c}
+body.dark-ui .launch-strip{background:#152033;border-color:#2b4a5e}
+body.dark-ui .backup-nudge{background:#332a12;border-bottom-color:#5a4a1e;color:#f0c66a}
+body.dark-ui .net-banner.offline{background:#1c2334;border-bottom-color:var(--line);color:var(--ink)}
+body.dark-ui .net-banner.update{background:#16301f;border-bottom-color:#2a5a3c;color:#6fd79b}
+body.dark-ui .storage-banner,body.dark-ui .noscript-note{background:#332a12;border-bottom-color:#5a4a1e;color:#f0c66a}
+
+/* ============================================================
+   3. Respect the device's reduced-motion setting automatically.
+   Calm mode existed but only as a manual switch, so a child whose
+   device already asks for less motion still got confetti.
+   ============================================================ */
+@media (prefers-reduced-motion: reduce){
+  .celebrate-card{transition:none}
+  .path-row.current .path-icon{animation:none}
+  .explorer-step.active{animation:none}
+}
+
+/* Onboarding and the lesson stepper were built before theming and kept light
+   surfaces, so in dark mode they rendered pale text on pale panels. */
+body.dark-ui .beta-hero{background:linear-gradient(135deg,#1b1748,#3a32a0)}
+body.dark-ui .beta-onboard-card,body.dark-ui .beta-parent-rule,body.dark-ui .kid-start,
+body.dark-ui .track-choice,body.dark-ui .beta-gear-grid label,body.dark-ui .beta-name input,
+body.dark-ui .beta-note,body.dark-ui .beta-check{
+  background:var(--card);border-color:var(--line);color:var(--ink)}
+body.dark-ui .kid-start{background:#241f14;border-color:#5a4a1e}
+body.dark-ui .beta-trust span{background:rgba(255,255,255,.14);color:#fff}
+body.dark-ui .explorer-stepper{background:rgba(23,29,43,.96);border-color:var(--line)}
+body.dark-ui .explorer-stepper span{background:#232b3d;color:var(--muted)}
+body.dark-ui .explorer-stepper span.active{background:var(--accent);color:#0f1220}
+body.dark-ui .child-mode-note{background:#16301f;border-color:#2a5a3c;color:var(--ink)}
+body.dark-ui .explorer-help-panel{background:#332a12;border-color:#5a4a1e;color:var(--ink)}
+body.dark-ui .glossary-card{background:#152033;border-color:#2b4a5e}
+body.dark-ui .vocab-chip,body.dark-ui .vocab-def{background:var(--card);border-color:var(--line)}
+body.dark-ui .learning-target{background:#241f14;border-color:#5a4a1e}
+body.dark-ui .ready-when{background:var(--card)}
+body.dark-ui .entry-probe,body.dark-ui .visual-storyboard{background:var(--card);border-color:var(--line)}
+body.dark-ui .session-plan{background:#2b2113;border-color:#6b5222}
+body.dark-ui .rescue-bridge,body.dark-ui .gear-preflight{background:#332a12;border-color:#5a4a1e}
+body.dark-ui .micro-help{background:var(--card);border-color:var(--accent)}
+body.dark-ui .autosave-line b{color:var(--ink)}
+body.dark-ui .free-badge{background:#16301f;color:#6fd79b}
+body.dark-ui .safety-line{background:#36201f}
+
+/* In dark mode the accent becomes a light lavender, so white button text drops
+   to ~2.7:1. Dark text on the light accent reads far better. */
+body.dark-ui .primary,body.dark-ui .launch-btn,body.dark-ui .badge-chip.earned{color:#14152b}
+body.dark-ui .primary:hover{color:#14152b}
+body.dark-ui .hero .primary{background:#fff;color:#241f6b}
+/* Paragraphs that hardcoded a light-theme grey. */
+body.dark-ui .nokit-switch p,body.dark-ui .launch-item p,body.dark-ui .mission-card p,
+body.dark-ui .celebrate-card p,body.dark-ui .kid-start-grid button small,
+body.dark-ui .review-empty p,body.dark-ui .help-foot,body.dark-ui .weekly-plan p{color:var(--muted)}

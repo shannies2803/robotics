@@ -25,7 +25,9 @@ const SHOTS = [
   { name: 'labs-phone',     w: 390, h: 900, mobile: true, setup: "startAsLearner('explorer'); showPage('labs');" },
   { name: 'reading-panel',  w: 390, h: 700, mobile: true, setup: "startAsLearner('explorer'); state.prefs.textSize='xlarge'; applyPrefs(); showPage('path'); toggleReadingPanel(true);" },
   { name: 'home-desktop',   w: 1200, h: 900, full: true, setup: "startAsLearner('explorer'); showPage('home');" },
-  { name: 'summary-print',  w: 1200, h: 900, full: true, setup: "startAsLearner('explorer'); state.prefs.viewMode='adult'; save(); showPage('summary');" }
+  { name: 'summary-print',  w: 1200, h: 900, full: true, setup: "startAsLearner('explorer'); state.prefs.viewMode='adult'; save(); showPage('summary');" },
+  { name: 'dark-path',      w: 390, h: 900, mobile: true, setup: "startAsLearner('explorer'); state.prefs.theme='dark'; save(); applyPrefs(); showPage('path');" },
+  { name: 'dark-lesson',    w: 390, h: 900, mobile: true, setup: "startAsLearner('explorer'); state.prefs.theme='dark'; save(); applyPrefs(); openMission('nk1');" }
 ];
 
 (async () => {

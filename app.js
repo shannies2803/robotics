@@ -222,7 +222,7 @@ const DEFAULT_STATE={
   activeLearner:'faye',
   roster:{faye:{name:'Explorer',track:'Explorer',emoji:'🌟'},philip:{name:'Engineer',track:'Engineer',emoji:'⚙️'}},
   equipment:['Web browser'],
-  prefs:{largeText:false,textSize:'normal',fontStyle:'default',motion:'on',focus:false,equipmentConfirmed:false,viewMode:'learner',betaOnboarded:false,learnerNames:{faye:'',philip:''},noKitPath:{faye:false,philip:false},selfDirected:false,lastBackupAt:null,lastBackupCount:0,backupNudgeDismissedAt:null,betaTesterType:'parent'},
+  prefs:{largeText:false,textSize:'normal',fontStyle:'default',motion:'on',theme:'auto',focus:false,equipmentConfirmed:false,viewMode:'learner',betaOnboarded:false,learnerNames:{faye:'',philip:''},noKitPath:{faye:false,philip:false},selfDirected:false,lastBackupAt:null,lastBackupCount:0,backupNudgeDismissedAt:null,betaTesterType:'parent'},
   learners:{
     faye:{completed:[],missions:{},evidence:{},diagnostics:[],assessments:[],reviews:[],journals:[],artifacts:[],misconceptions:{},remediation:{},startId:null,sessions:[],sessionDraft:null,designReviews:[],vocabViews:{},defects:[],rescueLogs:[],testLogs:[],labAttempts:[],reviewAttempts:[],remediationAttempts:[],attemptPackets:[],debugLogs:[],missionDrafts:{},entryProbes:[],learningSignals:[]},
     philip:{completed:[],missions:{},evidence:{},diagnostics:[],assessments:[],reviews:[],journals:[],artifacts:[],misconceptions:{},remediation:{},startId:null,sessions:[],sessionDraft:null,designReviews:[],vocabViews:{},defects:[],rescueLogs:[],testLogs:[],labAttempts:[],reviewAttempts:[],remediationAttempts:[],attemptPackets:[],debugLogs:[],missionDrafts:{},entryProbes:[],learningSignals:[]}
@@ -434,7 +434,8 @@ function prefSeg(action,attr,current,opts){
 function readingControlsHTML(){
   return `<div class="pref-row"><b>Text size</b>${prefSeg('text-size','size',state.prefs.textSize||'normal',[['normal','Normal'],['large','Large'],['xlarge','Extra large']])}</div>`
    +`<div class="pref-row"><b>Letter style</b>${prefSeg('font-style','font',state.prefs.fontStyle||'default',[['default','Standard'],['readable','Easier to read']])}</div>`
-   +`<div class="pref-row"><b>Motion</b>${prefSeg('motion-pref','motion',state.prefs.motion||'on',[['on','Animations on'],['off','Calm mode']])}</div>`;
+   +`<div class="pref-row"><b>Motion</b>${prefSeg('motion-pref','motion',state.prefs.motion||'on',[['on','Animations on'],['off','Calm mode']])}</div>`
+   +`<div class="pref-row"><b>Colours</b>${prefSeg('theme-pref','theme',state.prefs.theme||'auto',[['auto','Match device'],['light','Light'],['dark','Dark']])}</div>`;
 }
 function renderReadingPanel(){
   const el=document.getElementById('readingPanel');if(!el)return;
@@ -458,6 +459,28 @@ function refreshPrefsUI(){
   if(el&&!el.hidden)renderReadingPanel();
   if(ui.page==='settings')renderSettings();
 }
+/*
+  Theme. 'auto' follows the device, which is what most people want and the only
+  option a child will understand. The explicit choices exist because a shared
+  family tablet is often set to one mode for everyone.
+*/
+function applyTheme(){
+  const pref=state.prefs.theme||'auto';
+  const root=document.documentElement;
+  if(pref==='auto')root.removeAttribute('data-theme');
+  else root.setAttribute('data-theme',pref);
+  const dark=pref==='dark'||(pref==='auto'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.body.classList.toggle('dark-ui',dark);
+  const meta=document.querySelector('meta[name="theme-color"]');
+  if(meta)meta.setAttribute('content',dark?'#10141f':'#5b52d6');
+}
+function watchSystemTheme(){
+  if(!window.matchMedia)return;
+  const mq=window.matchMedia('(prefers-color-scheme: dark)');
+  const onChange=()=>{if((state.prefs.theme||'auto')==='auto')applyTheme();};
+  if(mq.addEventListener)mq.addEventListener('change',onChange);
+  else if(mq.addListener)mq.addListener(onChange);
+}
 function applyPrefs(){
   const b=document.body;
   /* Legacy flag from earlier builds maps onto the new three-step scale. */
@@ -467,6 +490,7 @@ function applyPrefs(){
   b.classList.toggle('large-text',size!=='normal');
   b.classList.toggle('readable-font',(state.prefs.fontStyle||'default')==='readable');
   b.classList.toggle('calm',(state.prefs.motion||'on')==='off');
+  applyTheme();
   b.classList.toggle('focus',!!state.prefs.focus);
   applyNavigation();
 }
@@ -2386,6 +2410,7 @@ function handleClick(e){
   else if(a==='text-size'){state.prefs.textSize=b.dataset.size;save();refreshPrefsUI();}
   else if(a==='font-style'){state.prefs.fontStyle=b.dataset.font;save();refreshPrefsUI();}
   else if(a==='motion-pref'){state.prefs.motion=b.dataset.motion;save();refreshPrefsUI();}
+  else if(a==='theme-pref'){state.prefs.theme=b.dataset.theme;save();refreshPrefsUI();}
   else if(a==='toggle-nokit')toggleNoKitPath(b.dataset.on==='1');
   else if(a==='learner-self-start')startAsLearner(b.dataset.track);
   else if(a==='close-celebrate')closeCelebrate();
@@ -2407,7 +2432,7 @@ document.addEventListener('input',handleInput);
 window.addEventListener?.('beforeunload',()=>{if(ui.page==='lesson')captureMissionDraft(true);});
 document.addEventListener('keydown',e=>{const lp=document.getElementById('learnerPanel');if(e.key==='Escape'&&lp&&!lp.hidden){toggleLearnerPanel(false);return;}const rp=document.getElementById('readingPanel');if(e.key==='Escape'&&rp&&!rp.hidden){toggleReadingPanel(false);return;}if(e.key==='Escape'&&document.querySelector('.celebrate')){closeCelebrate();return;}if(e.key==='Escape'&&state.prefs.focus){state.prefs.focus=false;save();toast('Focus mode off.');}if(e.altKey&&e.key.toLowerCase()==='h')showPage('home');if(e.altKey&&e.key.toLowerCase()==='p')showPage('path');if(e.altKey&&e.key.toLowerCase()==='r')showPage('review');});
 
-applyPrefs();updateLearnerChip();announceStorage();registerServiceWorker();announceNetwork();maybeShowBackupNudge();
+applyPrefs();watchSystemTheme();updateLearnerChip();announceStorage();registerServiceWorker();announceNetwork();maybeShowBackupNudge();
 window.addEventListener('online',announceNetwork);window.addEventListener('offline',announceNetwork);
 if(!state.prefs.betaOnboarded){ui.page='welcome';showPage('welcome');}
 else renderHome();
