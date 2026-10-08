@@ -5,6 +5,13 @@
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
   Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'
 
+# The service worker must never come from a cache, or a browser can keep
+# handing out an old worker that in turn keeps serving an old app.
 /sw.js
   Cache-Control: no-cache
   Service-Worker-Allowed: /
+
+# The entry point to everything else. The service worker handles offline use,
+# so there is no reason to let a CDN pin an old copy.
+/index.html
+  Cache-Control: public, max-age=0, must-revalidate
